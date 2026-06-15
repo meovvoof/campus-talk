@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="180" viewBox="36 34 780 180" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">CampusTalk logo</title>
+  <desc id="logoDesc">Single-color campus chat icon on the left with a large wordmark on the right.</desc>
+  <style>
+    :root {
+      --logo-color: #3b82f6;
+    }
+
+    .line {
+      fill: none;
+      stroke: var(--logo-color);
+      stroke-width: 13;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .wordmark {
+      fill: var(--logo-color);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+      font-size: 92px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+  </style>
+
+  <g transform="translate(42 24) scale(0.88)">
+    <path class="line" d="M43 28h106c17 0 31 14 31 31v70c0 17-14 31-31 31H93l-38 30v-30H43c-17 0-31-14-31-31V59c0-17 14-31 31-31Z"/>
+    <path class="line" d="M56 126V94c0-22 18-40 40-40s40 18 40 40v32"/>
+    <path class="line" d="M46 126h100"/>
+    <path class="line" d="M69 126V96"/>
+    <path class="line" d="M96 126V79"/>
+    <path class="line" d="M123 126V96"/>
+  </g>
+
+  <text class="wordmark" x="222" y="151">CampusTalk</text>
+</svg>
