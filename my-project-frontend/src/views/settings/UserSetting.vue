@@ -109,11 +109,13 @@ function sendEmailCode() {
 
 function modifyEmail() {
   emailFormRef.value.validate(isValid => {
-    post('api/user/modify-email', emailForm, () => {
-      ElMessage.success('邮件修改成功')
-      store.user.email = emailForm.email
-      emailForm.code = ''
-    })
+    if (isValid) {
+      post('api/user/modify-email', emailForm, () => {
+        ElMessage.success('邮件修改成功')
+        store.user.email = emailForm.email
+        emailForm.code = ''
+      })
+    }
   })
 }
 </script>

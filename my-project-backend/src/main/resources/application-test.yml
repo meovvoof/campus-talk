@@ -1,4 +1,4 @@
-# 开发环境配置
+# 环境配置
 springdoc:
   paths-to-match: /api/**
   swagger-ui:
@@ -6,13 +6,23 @@ springdoc:
 spring:
   mail:
     host: smtp.163.com
-    username: javatestmailer@163.com
-    password: FNxMyxKYT6dCDzKe
+    username: xxxx@163.com
+    password: xxxxxx
   rabbitmq:
     addresses: localhost
     username: guest
     password: 123456
     virtual-host: /
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000ms
+  elasticsearch:
+    uris: localhost:9200
+    username: elastic
+    password: 123456
   datasource:
     url: jdbc:mysql://localhost:3306/study
     username: root
@@ -39,3 +49,14 @@ spring:
       origin: '*'
       credentials: false
       methods: '*'
+  minio:
+    endpoint: 'http://localhost:9000'
+    username: 'minio'
+    password: 'password'
+  weather:
+    api-host: 'kv487n5dxd.re.qweatherapi.com'
+    key: xxxxxxxx
+  ai:
+    deepseek:
+      api-key: 'xxxxxxxx'
+      base-url: 'xxxxxxxx'
