@@ -89,7 +89,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageStoreMapper, StoreImage> 
             String avatar = account == null ? null : account.getAvatar();
             if(mapper.update(null, Wrappers.<Account>update()
                     .eq("id", id).set("avatar", imageName)) > 0) {
-                this.deleteOldAvatar(avatar);
+                this.cleanupOldAvatar(avatar);
                 return imageName;
             } else {
                 this.deleteObject(imageName);
@@ -98,6 +98,14 @@ public class ImageServiceImpl extends ServiceImpl<ImageStoreMapper, StoreImage> 
         } catch (Exception e) {
             log.error("图片上传出现问题: "+ e.getMessage(), e);
             return null;
+        }
+    }
+
+    private void cleanupOldAvatar(String avatar) {
+        try {
+            this.deleteOldAvatar(avatar);
+        } catch (Exception e) {
+            log.warn("旧头像清理失败: {}", e.getMessage());
         }
     }
 

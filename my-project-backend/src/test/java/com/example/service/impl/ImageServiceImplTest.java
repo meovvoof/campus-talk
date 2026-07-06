@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -74,5 +75,21 @@ class ImageServiceImplTest {
         verify(minioClient).removeObject(captor.capture());
         assertTrue(captor.getValue().object().startsWith("/avatar/"));
         assertNotEquals("/avatar/old", captor.getValue().object());
+    }
+
+    @Test
+    void uploadAvatarReturnsNewAvatarWhenOldAvatarCleanupFailsAfterDatabaseUpdate() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(mock(ObjectWriteResponse.class));
+        Account account = new Account();
+        account.setAvatar("/avatar/old");
+        when(accountMapper.selectById(7)).thenReturn(account);
+        when(accountMapper.update(isNull(), any(Wrapper.class))).thenReturn(1);
+        doThrow(new RuntimeException("remove failed")).when(minioClient).removeObject(any(RemoveObjectArgs.class));
+        MockMultipartFile file = new MockMultipartFile("file", "avatar.jpg", "image/jpeg", "data".getBytes());
+
+        String result = service.uploadAvatar(file, 7);
+
+        assertNotNull(result);
+        assertTrue(result.startsWith("/avatar/"));
     }
 }
