@@ -1,5 +1,6 @@
 package com.example.entity.dto;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,6 +12,7 @@ import java.util.Date;
 @AllArgsConstructor
 public class StoreImage {
     Integer uid;
+    @TableId
     String name;
     Date time;
 }
