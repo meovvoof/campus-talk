@@ -44,8 +44,12 @@ public class FlowLimitingFilter extends HttpFilter {
 
     @Override
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
         String address = request.getRemoteAddr();
-        if ("OPTIONS".equals(request.getMethod()) && !tryCount(address))
+        if (!tryCount(address))
             this.writeBlockMessage(response);
         else
             chain.doFilter(request, response);
