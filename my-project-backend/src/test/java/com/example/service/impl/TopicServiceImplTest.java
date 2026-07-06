@@ -4,11 +4,15 @@ import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.example.entity.dto.Account;
 import com.example.entity.dto.Topic;
+import com.example.entity.dto.TopicComment;
+import com.example.entity.vo.request.AddCommentVO;
 import com.example.entity.vo.request.TopicUpdateVO;
 import com.example.mapper.AccountMapper;
+import com.example.mapper.TopicCommentMapper;
 import com.example.mapper.TopicMapper;
 import com.example.utils.CacheUtils;
 import com.example.utils.Const;
+import com.example.utils.FlowUtils;
 import com.example.utils.ProhibitedUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +30,9 @@ class TopicServiceImplTest {
     private TopicServiceImpl service;
     private TopicMapper topicMapper;
     private AccountMapper accountMapper;
+    private TopicCommentMapper commentMapper;
     private CacheUtils cacheUtils;
+    private FlowUtils flowUtils;
     private ProhibitedUtils prohibitedUtils;
 
     @BeforeEach
@@ -34,11 +40,15 @@ class TopicServiceImplTest {
         service = new TopicServiceImpl();
         topicMapper = mock(TopicMapper.class);
         accountMapper = mock(AccountMapper.class);
+        commentMapper = mock(TopicCommentMapper.class);
         cacheUtils = mock(CacheUtils.class);
+        flowUtils = mock(FlowUtils.class);
         prohibitedUtils = mock(ProhibitedUtils.class);
         ReflectionTestUtils.setField(service, "baseMapper", topicMapper);
         ReflectionTestUtils.setField(service, "accountMapper", accountMapper);
+        ReflectionTestUtils.setField(service, "commentMapper", commentMapper);
         ReflectionTestUtils.setField(service, "cacheUtils", cacheUtils);
+        ReflectionTestUtils.setField(service, "flowUtils", flowUtils);
         ReflectionTestUtils.setField(service, "prohibitedUtils", prohibitedUtils);
     }
 
@@ -110,5 +120,27 @@ class TopicServiceImplTest {
         assertNull(service.updateTopic(3, vo));
 
         verify(cacheUtils).deleteCachePattern(Const.FORUM_TOPIC_PREVIEW_CACHE + "*");
+    }
+
+    @Test
+    void createCommentRejectsLockedTopicBeforeWriting() {
+        Topic topic = new Topic();
+        topic.setId(9);
+        topic.setUid(3);
+        topic.setLocked(1);
+        when(topicMapper.selectById(9)).thenReturn(topic);
+        when(flowUtils.limitPeriodCounterCheck(anyString(), anyInt(), anyInt())).thenReturn(true);
+        Account account = new Account();
+        account.setId(3);
+        when(accountMapper.selectById(3)).thenReturn(account);
+        AddCommentVO vo = new AddCommentVO();
+        vo.setTid(9);
+        vo.setQuote(0);
+        vo.setContent("{\"ops\":[{\"insert\":\"hello\"}]}");
+
+        String result = service.createComment(3, vo);
+
+        assertEquals("主题已锁定，无法回复", result);
+        verify(commentMapper, never()).insert(any(TopicComment.class));
     }
 }

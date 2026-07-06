@@ -189,6 +189,11 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     public String createComment(int uid, AddCommentVO vo) {
         if(!textLimitCheck(JSONObject.parseObject(vo.getContent()), 2000))
             return "评论内容太多，发表失败！";
+        Topic topic = baseMapper.selectById(vo.getTid());
+        if(topic == null)
+            return "主题不存在，无法回复";
+        if(Objects.equals(topic.getLocked(), 1))
+            return "主题已锁定，无法回复";
         String key = Const.FORUM_TOPIC_COMMENT_COUNTER + uid;
         if(!flowUtils.limitPeriodCounterCheck(key, 2, 60))
             return "发表评论频繁，请稍后再试！";
@@ -199,7 +204,6 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         BeanUtils.copyProperties(vo, comment);
         comment.setTime(new Date());
         commentMapper.insert(comment);
-        Topic topic = baseMapper.selectById(vo.getTid());
         Account account = accountMapper.selectById(uid);
         if(vo.getQuote() > 0) {
             TopicComment com = commentMapper.selectById(vo.getQuote());
