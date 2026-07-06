@@ -128,7 +128,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         if(baseMapper.update(null, Wrappers.<Topic>update()
                 .eq("id", tid)
                 .set("type", type)
-        ) > 1) {
+        ) > 0) {
             cacheUtils.deleteCachePattern(Const.FORUM_TOPIC_PREVIEW_CACHE + "*");
         }
     }
@@ -267,18 +267,22 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
 
     @Override
     public void setTopicTop(int tid, boolean top) {
-        baseMapper.update(null, Wrappers.<Topic>update()
+        int result = baseMapper.update(null, Wrappers.<Topic>update()
                 .eq("id", tid)
                 .set("top", top)
         );
+        if(result > 0)
+            cacheUtils.deleteCachePattern(Const.FORUM_TOPIC_PREVIEW_CACHE + "*");
     }
 
     @Override
     public void setTopicLocked(int tid, boolean locked) {
-        baseMapper.update(null, Wrappers.<Topic>update()
+        int result = baseMapper.update(null, Wrappers.<Topic>update()
                 .eq("id", tid)
                 .set("locked", locked)
         );
+        if(result > 0)
+            cacheUtils.deleteCachePattern(Const.FORUM_TOPIC_PREVIEW_CACHE + "*");
     }
 
     @Override
@@ -353,6 +357,9 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     public TopicDetailVO getTopic(int tid, int uid) {
         TopicDetailVO vo = new TopicDetailVO();
         Topic topic = baseMapper.selectById(tid);
+        if(topic == null) {
+            return null;
+        }
         if(topic.getInvisible() == 1 && topic.getUid() != uid) {
             return null;
         }
