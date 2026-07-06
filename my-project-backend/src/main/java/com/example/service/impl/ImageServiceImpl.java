@@ -85,13 +85,16 @@ public class ImageServiceImpl extends ServiceImpl<ImageStoreMapper, StoreImage> 
                 .build();
         try {
             client.putObject(args);
-            String avatar = mapper.selectById(id).getAvatar();
-            this.deleteOldAvatar(avatar);
+            Account account = mapper.selectById(id);
+            String avatar = account == null ? null : account.getAvatar();
             if(mapper.update(null, Wrappers.<Account>update()
                     .eq("id", id).set("avatar", imageName)) > 0) {
+                this.deleteOldAvatar(avatar);
                 return imageName;
-            } else
+            } else {
+                this.deleteObject(imageName);
                 return null;
+            }
         } catch (Exception e) {
             log.error("图片上传出现问题: "+ e.getMessage(), e);
             return null;

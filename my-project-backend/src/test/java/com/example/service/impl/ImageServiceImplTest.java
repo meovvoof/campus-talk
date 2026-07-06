@@ -1,5 +1,7 @@
 package com.example.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.example.entity.dto.Account;
 import com.example.entity.dto.StoreImage;
 import com.example.mapper.AccountMapper;
 import com.example.mapper.ImageStoreMapper;
@@ -15,6 +17,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -53,5 +56,23 @@ class ImageServiceImplTest {
         ArgumentCaptor<RemoveObjectArgs> captor = ArgumentCaptor.forClass(RemoveObjectArgs.class);
         verify(minioClient).removeObject(captor.capture());
         assertTrue(captor.getValue().object().startsWith("/cache/"));
+    }
+
+    @Test
+    void uploadAvatarKeepsOldAvatarAndRemovesNewObjectWhenDatabaseUpdateFails() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(mock(ObjectWriteResponse.class));
+        Account account = new Account();
+        account.setAvatar("/avatar/old");
+        when(accountMapper.selectById(7)).thenReturn(account);
+        when(accountMapper.update(isNull(), any(Wrapper.class))).thenReturn(0);
+        MockMultipartFile file = new MockMultipartFile("file", "avatar.jpg", "image/jpeg", "data".getBytes());
+
+        String result = service.uploadAvatar(file, 7);
+
+        assertNull(result);
+        ArgumentCaptor<RemoveObjectArgs> captor = ArgumentCaptor.forClass(RemoveObjectArgs.class);
+        verify(minioClient).removeObject(captor.capture());
+        assertTrue(captor.getValue().object().startsWith("/avatar/"));
+        assertNotEquals("/avatar/old", captor.getValue().object());
     }
 }
