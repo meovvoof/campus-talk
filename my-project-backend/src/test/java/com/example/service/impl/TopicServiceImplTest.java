@@ -2,6 +2,7 @@ package com.example.service.impl;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.entity.dto.Account;
 import com.example.entity.dto.Topic;
 import com.example.entity.dto.TopicComment;
@@ -193,5 +194,29 @@ class TopicServiceImplTest {
 
         assertNotNull(result);
         verify(commentMapper, never()).insert(any(TopicComment.class));
+    }
+
+    @Test
+    void deleteTopicRemovesCommentsAndAllInteractionsWhenTopicDeleted() {
+        when(topicMapper.deleteById(9)).thenReturn(1);
+
+        service.deleteTopic(9);
+
+        verify(commentMapper).delete(any(QueryWrapper.class));
+        verify(topicMapper).deleteTopicLike(9);
+        verify(topicMapper).deleteTopicCollect(9);
+        verify(cacheUtils).deleteCachePattern(Const.FORUM_TOPIC_PREVIEW_CACHE + "*");
+    }
+
+    @Test
+    void deleteUserTopicRemovesCommentsAndAllInteractionsWhenTopicDeleted() {
+        when(topicMapper.delete(any(QueryWrapper.class))).thenReturn(1);
+
+        service.deleteTopic(9, 3);
+
+        verify(commentMapper).delete(any(QueryWrapper.class));
+        verify(topicMapper).deleteTopicLike(9);
+        verify(topicMapper).deleteTopicCollect(9);
+        verify(cacheUtils).deleteCachePattern(Const.FORUM_TOPIC_PREVIEW_CACHE + "*");
     }
 }

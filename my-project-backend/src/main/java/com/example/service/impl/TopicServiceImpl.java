@@ -265,9 +265,11 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
 
     @Override
     public void deleteTopic(int id) {
-        baseMapper.deleteById(id);
-        cacheUtils.deleteCachePattern(Const.FORUM_TOPIC_PREVIEW_CACHE + "*");
-        baseMapper.deleteTopicCollect(id);
+        int result = baseMapper.deleteById(id);
+        if(result > 0) {
+            cacheUtils.deleteCachePattern(Const.FORUM_TOPIC_PREVIEW_CACHE + "*");
+            deleteTopicRelations(id);
+        }
     }
 
     @Override
@@ -278,8 +280,14 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         );
         if(result > 0) {
             cacheUtils.deleteCachePattern(Const.FORUM_TOPIC_PREVIEW_CACHE + "*");
-            baseMapper.deleteTopicCollect(tid);
+            deleteTopicRelations(tid);
         }
+    }
+
+    private void deleteTopicRelations(int tid) {
+        commentMapper.delete(Wrappers.<TopicComment>query().eq("tid", tid));
+        baseMapper.deleteTopicLike(tid);
+        baseMapper.deleteTopicCollect(tid);
     }
 
     @Override
