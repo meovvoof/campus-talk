@@ -164,6 +164,9 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
             return "文章内容太多，发文失败！";
         if(!validTopicType(vo.getType()))
             return "文章类型非法！";
+        Account account = accountMapper.selectById(uid);
+        if(account != null && account.isMute())
+            return "您已被禁言，无法修改主题";
         if(prohibitedUtils.containsProhibitedWord(vo.getContent()))
             return "包含违禁词，发文失败！";
         int result = baseMapper.update(null, Wrappers.<Topic>update()
@@ -175,7 +178,11 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
                 .set("type", vo.getType())
                 .set("intro", Topic.recreateIntro(vo.getContent()))
         );
-        return result > 0 ? null : "文章被锁定，无法进行修改";
+        if(result > 0) {
+            cacheUtils.deleteCachePattern(Const.FORUM_TOPIC_PREVIEW_CACHE + "*");
+            return null;
+        }
+        return "文章被锁定，无法进行修改";
     }
 
     @Override
