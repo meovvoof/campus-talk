@@ -65,6 +65,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageStoreMapper, StoreImage> 
             if(this.save(new StoreImage(id, imageName, date))) {
                 return imageName;
             } else {
+                this.deleteObject(imageName);
                 return null;
             }
         } catch (Exception e) {
@@ -99,9 +100,13 @@ public class ImageServiceImpl extends ServiceImpl<ImageStoreMapper, StoreImage> 
 
     private void deleteOldAvatar(String avatar) throws Exception {
         if(avatar == null || avatar.isEmpty()) return;
+        this.deleteObject(avatar);
+    }
+
+    private void deleteObject(String object) throws Exception {
         RemoveObjectArgs remove = RemoveObjectArgs.builder()
                 .bucket("study")
-                .object(avatar)
+                .object(object)
                 .build();
         client.removeObject(remove);
     }
