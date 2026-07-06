@@ -18,6 +18,8 @@ import com.example.utils.FlowUtils;
 import com.example.utils.ProhibitedUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Set;
@@ -38,6 +40,8 @@ class TopicServiceImplTest {
     private CacheUtils cacheUtils;
     private FlowUtils flowUtils;
     private ProhibitedUtils prohibitedUtils;
+    private StringRedisTemplate redisTemplate;
+    private HashOperations<String, Object, Object> hashOperations;
 
     @BeforeEach
     void setUp() {
@@ -48,12 +52,16 @@ class TopicServiceImplTest {
         cacheUtils = mock(CacheUtils.class);
         flowUtils = mock(FlowUtils.class);
         prohibitedUtils = mock(ProhibitedUtils.class);
+        redisTemplate = mock(StringRedisTemplate.class);
+        hashOperations = mock(HashOperations.class);
+        when(redisTemplate.opsForHash()).thenReturn(hashOperations);
         ReflectionTestUtils.setField(service, "baseMapper", topicMapper);
         ReflectionTestUtils.setField(service, "accountMapper", accountMapper);
         ReflectionTestUtils.setField(service, "commentMapper", commentMapper);
         ReflectionTestUtils.setField(service, "cacheUtils", cacheUtils);
         ReflectionTestUtils.setField(service, "flowUtils", flowUtils);
         ReflectionTestUtils.setField(service, "prohibitedUtils", prohibitedUtils);
+        ReflectionTestUtils.setField(service, "template", redisTemplate);
     }
 
     @Test
@@ -218,5 +226,18 @@ class TopicServiceImplTest {
         verify(topicMapper).deleteTopicLike(9);
         verify(topicMapper).deleteTopicCollect(9);
         verify(cacheUtils).deleteCachePattern(Const.FORUM_TOPIC_PREVIEW_CACHE + "*");
+    }
+
+    @Test
+    void deleteTopicRemovesPendingInteractCacheWhenTopicDeleted() {
+        when(topicMapper.deleteById(9)).thenReturn(1);
+        when(hashOperations.keys("like")).thenReturn(Set.of("9:3", "8:3"));
+        when(hashOperations.keys("collect")).thenReturn(Set.of("9:4"));
+
+        service.deleteTopic(9);
+
+        verify(hashOperations).delete("like", "9:3");
+        verify(hashOperations).delete("collect", "9:4");
+        verify(hashOperations, never()).delete("like", "8:3");
     }
 }

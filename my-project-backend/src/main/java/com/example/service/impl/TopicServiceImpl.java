@@ -288,6 +288,21 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         commentMapper.delete(Wrappers.<TopicComment>query().eq("tid", tid));
         baseMapper.deleteTopicLike(tid);
         baseMapper.deleteTopicCollect(tid);
+        deletePendingInteractCache(tid);
+    }
+
+    private void deletePendingInteractCache(int tid) {
+        deletePendingInteractCache(tid, "like");
+        deletePendingInteractCache(tid, "collect");
+    }
+
+    private void deletePendingInteractCache(int tid, String type) {
+        Set<Object> keys = template.opsForHash().keys(type);
+        if(keys == null || keys.isEmpty()) return;
+        String prefix = tid + ":";
+        keys.stream()
+                .filter(key -> key.toString().startsWith(prefix))
+                .forEach(key -> template.opsForHash().delete(type, key));
     }
 
     @Override
