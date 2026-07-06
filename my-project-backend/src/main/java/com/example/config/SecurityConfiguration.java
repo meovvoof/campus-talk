@@ -55,7 +55,8 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(conf -> conf
                         .requestMatchers("/api/auth/**", "/error").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .anyRequest().hasAnyRole(Const.ROLE_DEFAULT)
+                        .requestMatchers("/api/admin/**").hasRole(Const.ROLE_ADMIN)
+                        .anyRequest().hasAnyRole(Const.ROLE_DEFAULT, Const.ROLE_ADMIN)
                 )
                 .formLogin(conf -> conf
                         .loginProcessingUrl("/api/auth/login")
@@ -95,9 +96,11 @@ public class SecurityConfiguration {
         response.setContentType("application/json;charset=utf-8");
         PrintWriter writer = response.getWriter();
         if(exceptionOrAuthentication instanceof AccessDeniedException exception) {
+            response.setStatus(403);
             writer.write(RestBean
                     .forbidden(exception.getMessage()).asJsonString());
         } else if(exceptionOrAuthentication instanceof Exception exception) {
+            response.setStatus(401);
             writer.write(RestBean
                     .unauthorized(exception.getMessage()).asJsonString());
         } else if(exceptionOrAuthentication instanceof Authentication authentication){
@@ -105,6 +108,7 @@ public class SecurityConfiguration {
             Account account = service.findAccountByNameOrEmail(user.getUsername());
             String jwt = utils.createJwt(user, account.getUsername(), account.getId());
             if(jwt == null) {
+                response.setStatus(403);
                 writer.write(RestBean.forbidden("登录验证频繁，请稍后再试").asJsonString());
             } else {
                 AuthorizeVO vo = account.asViewObject(AuthorizeVO.class, o -> o.setToken(jwt));
