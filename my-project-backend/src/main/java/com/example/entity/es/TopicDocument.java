@@ -9,7 +9,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 import java.util.Date;
 
 @Data
-@Document(indexName = "db_topic")
+@Document(indexName = "db_topic", createIndex = false)
 public class TopicDocument {
     @Id
     @Field(type = FieldType.Keyword)

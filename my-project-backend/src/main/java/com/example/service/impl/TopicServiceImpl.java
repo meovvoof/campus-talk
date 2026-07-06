@@ -20,7 +20,6 @@ import com.example.utils.CacheUtils;
 import com.example.utils.Const;
 import com.example.utils.FlowUtils;
 import com.example.utils.ProhibitedUtils;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.elasticsearch.core.SearchHit;
@@ -70,18 +69,33 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     @Resource
     TopicRepository topicRepository;
 
-    private Set<Integer> types = null;
-    @PostConstruct
-    private void initTypes() {
-        types = this.listTypes()
-                .stream()
-                .map(TopicType::getId)
-                .collect(Collectors.toSet());
-    }
+    private volatile Set<Integer> types;
 
     @Override
     public List<TopicType> listTypes() {
         return mapper.selectList(null);
+    }
+
+    private boolean validTopicType(Integer type) {
+        return type != null && currentTopicTypes().contains(type);
+    }
+
+    private Set<Integer> currentTopicTypes() {
+        Set<Integer> localTypes = types;
+        if(localTypes != null)
+            return localTypes;
+        synchronized (this) {
+            if(types == null)
+                refreshTopicTypes();
+            return types;
+        }
+    }
+
+    private void refreshTopicTypes() {
+        types = this.listTypes()
+                .stream()
+                .map(TopicType::getId)
+                .collect(Collectors.toSet());
     }
 
     @Override
@@ -97,6 +111,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         if(mapper.deleteById(id) > 0) {
             List<Topic> list = baseMapper.selectList(Wrappers.<Topic>query().eq("type", type.getId()));
             list.forEach(topic -> deleteTopic(topic.getId()));
+            refreshTopicTypes();
         }
     }
 
@@ -105,6 +120,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         TopicType type = new TopicType();
         BeanUtils.copyProperties(vo, type);
         mapper.insert(type);
+        refreshTopicTypes();
     }
 
     @Override
@@ -121,7 +137,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     public String createTopic(int uid, TopicCreateVO vo) {
         if(!textLimitCheck(vo.getContent(), 20000))
             return "文章内容太多，发文失败！";
-        if(!types.contains(vo.getType()))
+        if(!validTopicType(vo.getType()))
             return "文章类型非法！";
         String key = Const.FORUM_TOPIC_CREATE_COUNTER + uid;
         if(!flowUtils.limitPeriodCounterCheck(key, 3, 3600))
@@ -146,7 +162,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     public String updateTopic(int uid, TopicUpdateVO vo) {
         if(!textLimitCheck(vo.getContent(), 20000))
             return "文章内容太多，发文失败！";
-        if(!types.contains(vo.getType()))
+        if(!validTopicType(vo.getType()))
             return "文章类型非法！";
         if(prohibitedUtils.containsProhibitedWord(vo.getContent()))
             return "包含违禁词，发文失败！";

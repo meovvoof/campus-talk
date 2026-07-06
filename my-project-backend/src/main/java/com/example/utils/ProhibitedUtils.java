@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,6 +25,8 @@ public class ProhibitedUtils {
         try (FileInputStream stream = new FileInputStream(filePath)) {
             JSONArray parse = JSONArray.parse(new String(stream.readAllBytes()));
             prohibitedWords = parse.toList(String.class);
+        } catch (FileNotFoundException e) {
+            prohibitedWords = new ArrayList<>();
         } catch (IOException e) {
             prohibitedWords = new ArrayList<>();
             log.error("违禁词列表读取失败", e);
