@@ -187,7 +187,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
 
     @Override
     public String createComment(int uid, AddCommentVO vo) {
-        if(!textLimitCheck(JSONObject.parseObject(vo.getContent()), 2000))
+        if(!textLimitCheck(parseContent(vo.getContent()), 2000))
             return "评论内容太多，发表失败！";
         Topic topic = baseMapper.selectById(vo.getTid());
         if(topic == null)
@@ -495,11 +495,29 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
 
     private boolean textLimitCheck(JSONObject object, int max) {
         if(object == null) return false;
+        JSONArray ops = object.getJSONArray("ops");
+        if(ops == null) return false;
         long length = 0;
-        for (Object op : object.getJSONArray("ops")) {
-            length += JSONObject.from(op).getString("insert").length();
-            if(length > max) return false;
+        try {
+            for (Object op : ops) {
+                Object insert = JSONObject.from(op).get("insert");
+                if(insert instanceof String text)
+                    length += text.length();
+                else if(insert == null)
+                    return false;
+                if(length > max) return false;
+            }
+        } catch (Exception e) {
+            return false;
         }
         return true;
+    }
+
+    private JSONObject parseContent(String content) {
+        try {
+            return JSONObject.parseObject(content);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

@@ -6,6 +6,7 @@ import com.example.entity.dto.Account;
 import com.example.entity.dto.Topic;
 import com.example.entity.dto.TopicComment;
 import com.example.entity.vo.request.AddCommentVO;
+import com.example.entity.vo.request.TopicCreateVO;
 import com.example.entity.vo.request.TopicUpdateVO;
 import com.example.mapper.AccountMapper;
 import com.example.mapper.TopicCommentMapper;
@@ -20,7 +21,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -163,6 +166,32 @@ class TopicServiceImplTest {
         String result = service.createComment(3, vo);
 
         assertEquals("引用评论不存在，无法回复", result);
+        verify(commentMapper, never()).insert(any(TopicComment.class));
+    }
+
+    @Test
+    void createTopicRejectsMalformedDeltaWithoutWriting() {
+        TopicCreateVO vo = new TopicCreateVO();
+        vo.setType(1);
+        vo.setTitle("title");
+        vo.setContent(JSONObject.parseObject("{}"));
+
+        String result = assertDoesNotThrow(() -> service.createTopic(3, vo));
+
+        assertNotNull(result);
+        verify(topicMapper, never()).insert(any(Topic.class));
+    }
+
+    @Test
+    void createCommentRejectsInvalidJsonWithoutWriting() {
+        AddCommentVO vo = new AddCommentVO();
+        vo.setTid(9);
+        vo.setQuote(0);
+        vo.setContent("{");
+
+        String result = assertDoesNotThrow(() -> service.createComment(3, vo));
+
+        assertNotNull(result);
         verify(commentMapper, never()).insert(any(TopicComment.class));
     }
 }
