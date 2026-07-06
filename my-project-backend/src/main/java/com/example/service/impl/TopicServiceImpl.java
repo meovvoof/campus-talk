@@ -101,6 +101,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     @Override
     public void updateTopicType(TopicTypeVO vo) {
         TopicType topicType = mapper.selectById(vo.getId());
+        if(topicType == null) return;
         BeanUtils.copyProperties(vo, topicType);
         mapper.updateById(topicType);
     }
@@ -108,6 +109,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     @Override
     public void deleteTopicType(int id) {
         TopicType type = mapper.selectById(id);
+        if(type == null) return;
         if(mapper.deleteById(id) > 0) {
             List<Topic> list = baseMapper.selectList(Wrappers.<Topic>query().eq("type", type.getId()));
             list.forEach(topic -> deleteTopic(topic.getId()));

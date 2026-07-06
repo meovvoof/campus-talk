@@ -6,12 +6,15 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.entity.dto.Account;
 import com.example.entity.dto.Topic;
 import com.example.entity.dto.TopicComment;
+import com.example.entity.dto.TopicType;
 import com.example.entity.vo.request.AddCommentVO;
 import com.example.entity.vo.request.TopicCreateVO;
 import com.example.entity.vo.request.TopicUpdateVO;
+import com.example.entity.vo.response.TopicTypeVO;
 import com.example.mapper.AccountMapper;
 import com.example.mapper.TopicCommentMapper;
 import com.example.mapper.TopicMapper;
+import com.example.mapper.TopicTypeMapper;
 import com.example.utils.CacheUtils;
 import com.example.utils.Const;
 import com.example.utils.FlowUtils;
@@ -35,6 +38,7 @@ class TopicServiceImplTest {
 
     private TopicServiceImpl service;
     private TopicMapper topicMapper;
+    private TopicTypeMapper topicTypeMapper;
     private AccountMapper accountMapper;
     private TopicCommentMapper commentMapper;
     private CacheUtils cacheUtils;
@@ -47,6 +51,7 @@ class TopicServiceImplTest {
     void setUp() {
         service = new TopicServiceImpl();
         topicMapper = mock(TopicMapper.class);
+        topicTypeMapper = mock(TopicTypeMapper.class);
         accountMapper = mock(AccountMapper.class);
         commentMapper = mock(TopicCommentMapper.class);
         cacheUtils = mock(CacheUtils.class);
@@ -56,6 +61,7 @@ class TopicServiceImplTest {
         hashOperations = mock(HashOperations.class);
         when(redisTemplate.opsForHash()).thenReturn(hashOperations);
         ReflectionTestUtils.setField(service, "baseMapper", topicMapper);
+        ReflectionTestUtils.setField(service, "mapper", topicTypeMapper);
         ReflectionTestUtils.setField(service, "accountMapper", accountMapper);
         ReflectionTestUtils.setField(service, "commentMapper", commentMapper);
         ReflectionTestUtils.setField(service, "cacheUtils", cacheUtils);
@@ -239,5 +245,26 @@ class TopicServiceImplTest {
         verify(hashOperations).delete("like", "9:3");
         verify(hashOperations).delete("collect", "9:4");
         verify(hashOperations, never()).delete("like", "8:3");
+    }
+
+    @Test
+    void updateTopicTypeIgnoresMissingType() {
+        TopicTypeVO vo = new TopicTypeVO();
+        vo.setId(7);
+        when(topicTypeMapper.selectById(7)).thenReturn(null);
+
+        assertDoesNotThrow(() -> service.updateTopicType(vo));
+
+        verify(topicTypeMapper, never()).updateById(any(TopicType.class));
+    }
+
+    @Test
+    void deleteTopicTypeIgnoresMissingType() {
+        when(topicTypeMapper.selectById(7)).thenReturn(null);
+
+        assertDoesNotThrow(() -> service.deleteTopicType(7));
+
+        verify(topicTypeMapper, never()).deleteById(7);
+        verify(topicMapper, never()).selectList(any(QueryWrapper.class));
     }
 }
