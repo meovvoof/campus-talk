@@ -1,5 +1,8 @@
 package com.example.listener;
 
+import com.example.entity.dto.EmailRecord;
+import com.example.mapper.EmailRecordMapper;
+import com.example.utils.Const;
 import jakarta.annotation.Resource;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -14,14 +17,25 @@ import java.util.Map;
  * 用于处理邮件发送的消息队列监听器
  */
 @Component
-@RabbitListener(queues = "mail")
+@RabbitListener(queues = Const.MQ_MAIL)
 public class MailQueueListener {
 
     @Resource
     JavaMailSender sender;
 
+    @Resource
+    EmailRecordMapper recordMapper;
+
     @Value("${spring.mail.username}")
     String username;
+
+    @RabbitHandler
+    public void sendMailMessage(EmailRecord record) {
+        SimpleMailMessage message = createMessage(record.getTitle(), record.getContent(), record.getEmail());
+        sender.send(message);
+        record.setStatus(1);
+        recordMapper.updateById(record);
+    }
 
     /**
      * 处理邮件发送
