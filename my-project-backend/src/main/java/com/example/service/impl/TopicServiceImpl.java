@@ -194,6 +194,12 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
             return "主题不存在，无法回复";
         if(Objects.equals(topic.getLocked(), 1))
             return "主题已锁定，无法回复";
+        TopicComment quotedComment = null;
+        if(vo.getQuote() > 0) {
+            quotedComment = commentMapper.selectById(vo.getQuote());
+            if(quotedComment == null || !Objects.equals(quotedComment.getTid(), vo.getTid()))
+                return "引用评论不存在，无法回复";
+        }
         String key = Const.FORUM_TOPIC_COMMENT_COUNTER + uid;
         if(!flowUtils.limitPeriodCounterCheck(key, 2, 60))
             return "发表评论频繁，请稍后再试！";
@@ -206,7 +212,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         commentMapper.insert(comment);
         Account account = accountMapper.selectById(uid);
         if(vo.getQuote() > 0) {
-            TopicComment com = commentMapper.selectById(vo.getQuote());
+            TopicComment com = quotedComment;
             if(!Objects.equals(account.getId(), com.getUid())) {
                 notificationService.addNotification(
                         com.getUid(),

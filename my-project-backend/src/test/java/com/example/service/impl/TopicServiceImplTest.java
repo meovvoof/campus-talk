@@ -143,4 +143,26 @@ class TopicServiceImplTest {
         assertEquals("主题已锁定，无法回复", result);
         verify(commentMapper, never()).insert(any(TopicComment.class));
     }
+
+    @Test
+    void createCommentRejectsMissingQuoteBeforeWriting() {
+        Topic topic = new Topic();
+        topic.setId(9);
+        topic.setUid(4);
+        topic.setLocked(0);
+        when(topicMapper.selectById(9)).thenReturn(topic);
+        when(flowUtils.limitPeriodCounterCheck(anyString(), anyInt(), anyInt())).thenReturn(true);
+        Account account = new Account();
+        account.setId(3);
+        when(accountMapper.selectById(3)).thenReturn(account);
+        AddCommentVO vo = new AddCommentVO();
+        vo.setTid(9);
+        vo.setQuote(8);
+        vo.setContent("{\"ops\":[{\"insert\":\"hello\"}]}");
+
+        String result = service.createComment(3, vo);
+
+        assertEquals("引用评论不存在，无法回复", result);
+        verify(commentMapper, never()).insert(any(TopicComment.class));
+    }
 }
