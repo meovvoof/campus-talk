@@ -27,8 +27,43 @@ const router = createRouter({
             path: '/index',
             name: 'index',
             component: () => import('@/views/IndexView.vue'),
+            redirect: '/index/forum',
             children: [
                 {
+                    path: 'forum',
+                    name: 'forum',
+                    component: () => import('@/views/forum/TopicList.vue')
+                }, {
+                    path: 'topic-detail/:tid',
+                    name: 'topic-detail',
+                    component: () => import('@/views/forum/TopicDetail.vue'),
+                    props: true
+                }, {
+                    path: 'topic-create',
+                    name: 'topic-create',
+                    component: () => import('@/views/forum/TopicEditor.vue')
+                }, {
+                    path: 'topic-edit/:tid',
+                    name: 'topic-edit',
+                    component: () => import('@/views/forum/TopicEditor.vue'),
+                    props: true
+                }, {
+                    path: 'collects',
+                    name: 'collects',
+                    component: () => import('@/views/forum/CollectTopics.vue')
+                }, {
+                    path: 'search-topic',
+                    name: 'search-topic',
+                    component: () => import('@/views/forum/SearchTopics.vue')
+                }, {
+                    path: 'admin/users',
+                    name: 'admin-users',
+                    component: () => import('@/views/admin/AdminUsers.vue')
+                }, {
+                    path: 'admin/forum',
+                    name: 'admin-forum',
+                    component: () => import('@/views/admin/AdminForum.vue')
+                }, {
                     path: 'user-setting',
                     name: 'user-setting',
                     component: () => import('@/views/settings/UserSetting.vue')

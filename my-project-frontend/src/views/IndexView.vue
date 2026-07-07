@@ -3,7 +3,7 @@ import logoImg from '@/assets/campus-forum-logo.svg'
 import {get, logout} from '@/net'
 import router from "@/router";
 import {useStore} from "@/store";
-import {reactive, ref} from "vue";
+import {computed, reactive, ref} from "vue";
 import {
   Back,
   Bell,
@@ -18,6 +18,7 @@ import {
 
 const store = useStore()
 const loading = ref(true);
+const isAdmin = computed(() => store.user.role === 'admin')
 
 const searchInput = reactive({
   type: '1',
@@ -32,6 +33,16 @@ get('/api/user/info', (data) => {
 function userLogout() {
   logout(() => router.push("/"))
 }
+
+function doSearch() {
+  const keyword = searchInput.text.trim()
+  if (keyword) {
+    router.push({
+      name: 'search-topic',
+      query: {keyword}
+    })
+  }
+}
 </script>
 
 <template>
@@ -40,7 +51,7 @@ function userLogout() {
       <el-header class="main-content-header">
         <el-image :src="logoImg" class="logo"/>
         <div style="flex: 1; padding: 0 20px; text-align: center">
-          <el-input v-model="searchInput.text" style="max-width: 400px" placeholder="搜索论坛相关内容...">
+          <el-input v-model="searchInput.text" style="max-width: 400px" placeholder="搜索帖子内容..." @keyup.enter="doSearch">
             <template #prefix>
               <el-icon>
                 <Search/>
@@ -101,19 +112,19 @@ function userLogout() {
                   </el-icon>
                   <span><b>校园论坛</b></span>
                 </template>
-                <el-menu-item index="1-1">
+                <el-menu-item index="/index/forum">
                   <el-icon>
                     <ChatDotSquare/>
                   </el-icon>
                   帖子广场
                 </el-menu-item>
-                <el-menu-item index="1-2">
+                <el-menu-item index="/index/topic-create">
                   <el-icon>
                     <Bell/>
                   </el-icon>
                   失物招领
                 </el-menu-item>
-                <el-menu-item index="1-3">
+                <el-menu-item index="/index/collects">
                   <el-icon>
                     <Notification/>
                   </el-icon>
@@ -169,6 +180,26 @@ function userLogout() {
                     <DataLine/>
                   </el-icon>
                   预约教室
+                </el-menu-item>
+              </el-sub-menu>
+              <el-sub-menu v-if="isAdmin" index="admin">
+                <template #title>
+                  <el-icon>
+                    <Monitor/>
+                  </el-icon>
+                  <span><b>后台管理</b></span>
+                </template>
+                <el-menu-item index="/index/admin/users">
+                  <el-icon>
+                    <User/>
+                  </el-icon>
+                  用户管理
+                </el-menu-item>
+                <el-menu-item index="/index/admin/forum">
+                  <el-icon>
+                    <Operation/>
+                  </el-icon>
+                  论坛管理
                 </el-menu-item>
               </el-sub-menu>
               <el-sub-menu index="3">
